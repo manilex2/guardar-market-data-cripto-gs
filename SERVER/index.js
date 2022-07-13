@@ -38,7 +38,7 @@ app.get("/", async (req, res) => {
             var contador = 0;
             for (let i = 0; i < respCriptoList.length; i++) {
                 const element = respCriptoList[i].name;
-                var sql2 = `SELECT * FROM marketdata WHERE name="${element}" GROUP BY market_name ORDER BY volume DESC LIMIT 10`;
+                var sql2 = `SELECT * FROM marketdata WHERE coin_id="${element}" ORDER BY volume DESC LIMIT 10`;
                 conexion.query(sql2, async (err, respMarketData) => {
                     if (err) {
                         console.error(err);
@@ -95,10 +95,9 @@ app.get("/", async (req, res) => {
                         }
                     }
                 });
-            }; 
-            setTimeout(() => {
-                guardarDatos(arreglo);
-            }, 20000);               
+            };
+            await delay(process.env.DELAY);
+            await guardarDatos(arreglo);               
             await finalizarEjecucion();
         }
     });
@@ -127,6 +126,10 @@ app.get("/", async (req, res) => {
             status: 200,
             message: "All OK"
         })
+    }
+
+    async function delay(ms) {
+        return await new Promise(resolve => setTimeout(resolve, ms));
     }
 });
 
