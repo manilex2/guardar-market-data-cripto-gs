@@ -27,7 +27,7 @@ functions:
     timeout: 300
     maximumRetryAttempts: 0
     events:
-      eventBridge:
+      - eventBridge:
         name: guardarMarketDataGS
         description: Guarda el market data desde la base de datos a Google Spreadsheet a las 15:15 (GMT) todos los dias
         schedule: cron(15 15 ? * * *)
