@@ -1,0 +1,33 @@
+service: guardar-market-data-cripto-gs
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: prod
+  region: us-east-2
+  enviroment:
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_DATABASE: ${env:DB_DATABASE}
+    TABLE_MARKET: ${env:TABLE_MARKET}
+    TABLE_CRIPTO: ${env:TABLE_CRIPTO}
+    SPREADSHEET_ID: ${env:SPREADSHEET_ID}
+    ID_HOJA_RANGO: ${env:ID_HOJA_RANGO}
+    DELAY: ${env:DELAY}
+
+functions:
+  guardarMarketDataCriptoGS:
+    handler: index.handler
+    memorySize: 512
+    name: guardarMarketDataCriptoGS
+    description: LCF16 - Funcion que toma la data de mercado de criptos de la base de datos y la guarda en una hoja en Google Spreadsheet
+    timeout: 300
+    maximumRetryAttempts: 0
+    events:
+      eventBridge:
+        name: guardarMarketDataGS
+        description: Guarda el market data desde la base de datos a Google Spreadsheet a las 15:15 (GMT) todos los dias
+        schedule: cron(15 15 ? * * *)
