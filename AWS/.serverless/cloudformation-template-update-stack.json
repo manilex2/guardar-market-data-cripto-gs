@@ -1,0 +1,278 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "GuardarMarketDataCriptoGSLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/guardarMarketDataCriptoGS"
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "guardar-market-data-cripto-gs",
+                  "dev",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarMarketDataCriptoGS:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/guardarMarketDataCriptoGS:*:*"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "guardar-market-data-cripto-gs",
+              "dev",
+              {
+                "Ref": "AWS::Region"
+              },
+              "lambdaRole"
+            ]
+          ]
+        }
+      }
+    },
+    "GuardarMarketDataCriptoGSLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/guardar-market-data-cripto-gs/dev/1657748887345-2022-07-13T21:48:07.345Z/guardar-market-data-cripto-gs.zip"
+        },
+        "Handler": "index.handler",
+        "Runtime": "nodejs16.x",
+        "FunctionName": "guardarMarketDataCriptoGS",
+        "MemorySize": 512,
+        "Timeout": 300,
+        "Description": "LCF16 - Funcion que toma la data de mercado de criptos de la base de datos y la guarda en una hoja en Google Spreadsheet",
+        "Environment": {
+          "Variables": {
+            "DB_USER": "root",
+            "DB_PASSWORD": "Invrtir*2021",
+            "DB_HOST": "seguimiento-oportunidades.cbu0yo4ytkop.us-east-2.rds.amazonaws.com",
+            "DB_PORT": "3306",
+            "DB_DATABASE": "invrtircriptos",
+            "TABLE_MARKET": "marketdata",
+            "TABLE_CRIPTO": "criptoslist",
+            "SPREADSHEET_ID": "1esGDnRzadrPnhFELY8GUd6Anrd2EXSjxkws6roRDZxI",
+            "ID_HOJA_RANGO": "CryptoData!A2:AP",
+            "DELAY": "30000"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "GuardarMarketDataCriptoGSLogGroup"
+      ]
+    },
+    "GuardarMarketDataCriptoGSLambdaVersionEBdfPAJXCoaPdq7ncbrgqzMEfE0wL193QuQ1kOkVV4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GuardarMarketDataCriptoGSLambdaFunction"
+        },
+        "CodeSha256": "abvzkqx606cRhmtKlHDBCRJ9tzWrWkP+F0GedDOW5nE=",
+        "Description": "LCF16 - Funcion que toma la data de mercado de criptos de la base de datos y la guarda en una hoja en Google Spreadsheet"
+      }
+    },
+    "GuardarMarketDataCriptoGSLambdaEvConf": {
+      "Type": "AWS::Lambda::EventInvokeConfig",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "GuardarMarketDataCriptoGSLambdaFunction"
+        },
+        "DestinationConfig": {},
+        "Qualifier": "$LATEST",
+        "MaximumRetryAttempts": 0
+      }
+    },
+    "GuardarMarketDataCriptoGSEventsRuleSchedule1": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "cron(15 15 ? * * *)",
+        "State": "ENABLED",
+        "Name": "guardarMarketDataGS",
+        "Description": "Guarda el market data desde la base de datos a Google Spreadsheet a las 15:15 (GMT) todos los dias",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "GuardarMarketDataCriptoGSLambdaFunction",
+                "Arn"
+              ]
+            },
+            "Id": "guardarMarketDataCriptoGSSchedule"
+          }
+        ]
+      }
+    },
+    "GuardarMarketDataCriptoGSLambdaPermissionEventsRuleSchedule1": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "GuardarMarketDataCriptoGSLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "GuardarMarketDataCriptoGSEventsRuleSchedule1",
+            "Arn"
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      },
+      "Export": {
+        "Name": "sls-guardar-market-data-cripto-gs-dev-ServerlessDeploymentBucketName"
+      }
+    },
+    "GuardarMarketDataCriptoGSLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "GuardarMarketDataCriptoGSLambdaVersionEBdfPAJXCoaPdq7ncbrgqzMEfE0wL193QuQ1kOkVV4"
+      },
+      "Export": {
+        "Name": "sls-guardar-market-data-cripto-gs-dev-GuardarMarketDataCriptoGSLambdaFunctionQualifiedArn"
+      }
+    }
+  }
+}
