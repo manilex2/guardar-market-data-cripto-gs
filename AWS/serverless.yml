@@ -6,7 +6,7 @@ provider:
   runtime: nodejs16.x
   stage: prod
   region: us-east-2
-  enviroment:
+  environment:
     DB_USER: ${env:DB_USER}
     DB_PASSWORD: ${env:DB_PASSWORD}
     DB_HOST: ${env:DB_HOST}
